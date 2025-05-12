@@ -1,0 +1,31 @@
+name: Print ENV_VAR for Environments
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  print-env-var:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        environment: [dev, prod]
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Set environment
+        run: echo "ENV_VAR=${{ secrets.ENV_VAR }}" >> $GITHUB_ENV
+        env:
+          ENV_VAR: ${{ secrets.ENV_VAR }}
+
+      - name: Print ENV_VAR for ${{ matrix.environment }}
+        run: echo "The value of ENV_VAR for ${{ matrix.environment }} is $ENV_VAR"
+        env:
+          ENV_VAR: ${{ secrets.ENV_VAR }}
+
+    environment:
+      name: ${{ matrix.environment }}
