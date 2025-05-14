@@ -4,14 +4,22 @@ on:
   push:
     branches:
       - master
+      - dev
+  pull_request:
+    branches:
+      - master
+      - dev
 
 jobs:
-  print-env-var:
+  dev_deployment:
+    name: Deployment to Dev
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
+    environment: dev
 
-    strategy:
-      matrix:
-        environment: [dev, prod]
+    # strategy:
+    #   matrix:
+    #     environment: [dev, prod]
 
     steps:
       - name: Check out code
@@ -21,10 +29,18 @@ jobs:
         run: echo "ENV_VAR=${{ vars.ENV_VAR }}" >> $GITHUB_ENV
         env:
           ENV_VAR: ${{ vars.ENV_VAR }}
+  
+  prod_deployment:
+    name: Deployment to Prod
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    environment: prod
 
-      - name: Print ENV_VAR for ${{ matrix.environment }}
-        run: echo "The value of ENV_VAR for ${{ matrix.environment }} is $ENV_VAR"
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
 
-
-    environment:
-      name: ${{ matrix.environment }}
+      - name: Set environment
+        run: echo "ENV_VAR=${{ vars.ENV_VAR }}" >> $GITHUB_ENV
+        env:
+          ENV_VAR: ${{ vars.ENV_VAR }}
