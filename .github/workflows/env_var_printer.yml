@@ -1,46 +1,65 @@
-name: Print ENV_VAR for Environments
+name: PR Deployments
 
 on:
+  pull_request:
+    types: [opened, synchronize, reopened]
   push:
     branches:
       - master
-      - dev
-  pull_request:
-    branches:
-      - master
-      - dev
 
 jobs:
-  dev_deployment:
-    name: Deployment to Dev
-    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+  deploy_to_dev:
+    if: github.event_name == 'pull_request'
+    name: Deploy PR to Dev
     runs-on: ubuntu-latest
     environment: dev
-
-    # strategy:
-    #   matrix:
-    #     environment: [dev, prod]
-
     steps:
       - name: Check out code
         uses: actions/checkout@v3
-
       - name: Set environment
         run: echo "ENV_VAR=${{ vars.ENV_VAR }}" >> $GITHUB_ENV
         env:
           ENV_VAR: ${{ vars.ENV_VAR }}
-  
-  prod_deployment:
-    name: Deployment to Prod
+      - name: Print ENV_VAR for Dev
+        run: echo "The value of ENV_VAR for dev is $ENV_VAR"
+        env:
+          ENV_VAR: ${{ vars.ENV_VAR }}
+      - name: Package build folder
+        run: |
+          tar -czf build.tar.gz build
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifact-${{ github.job }}
+          path: build.tar.gz
+
+  deploy_to_prod:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    name: Deploy to Prod
     runs-on: ubuntu-latest
     environment: prod
-
     steps:
       - name: Check out code
         uses: actions/checkout@v3
-
       - name: Set environment
         run: echo "ENV_VAR=${{ vars.ENV_VAR }}" >> $GITHUB_ENV
         env:
           ENV_VAR: ${{ vars.ENV_VAR }}
+      - name: Print ENV_VAR for Prod
+        run: echo "The value of ENV_VAR for prod is $ENV_VAR"
+        env:
+          ENV_VAR: ${{ vars.ENV_VAR }}
+      - name: Package build folder
+        run: |
+          tar -czf build.tar.gz build
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Release v${{ github.run_number }}
+          body: |
+            Automated release for run ${{ github.run_number }}
+          files: build.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
