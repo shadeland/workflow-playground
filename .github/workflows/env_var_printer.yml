@@ -52,8 +52,14 @@ jobs:
       - name: Package build folder
         run: |
           tar -czf build.tar.gz build
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: build-artifact-${{ github.job }}
-          path: build.tar.gz
+          tag_name: v${{ github.run_number }}
+          name: Release v${{ github.run_number }}
+          body: |
+            Automated release for run ${{ github.run_number }}
+          files: build.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
