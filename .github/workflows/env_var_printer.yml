@@ -2,14 +2,14 @@ name: PR Deployments
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [labeled]
   push:
     branches:
       - master
 
 jobs:
   deploy_to_dev:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && github.event.action == 'labeled' && contains( github.event.label.name, 'deploy-to-dev' )
     name: Deploy PR to Dev
     runs-on: ubuntu-latest
     environment: dev
